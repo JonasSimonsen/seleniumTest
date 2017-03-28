@@ -19,7 +19,6 @@ import org.openqa.selenium.Keys;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.WebElement;
 import org.openqa.selenium.chrome.ChromeDriver;
-import org.openqa.selenium.safari.SafariDriver;
 import org.openqa.selenium.support.ui.ExpectedCondition;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -35,9 +34,9 @@ public class CarsTest1 {
 
     @BeforeClass
     public static void setup() {
-        /*########################### IMPORTANT ######################*/
- /*## Change this, according to your own OS and location of driver(s) ##*/
- /*############################################################*/
+        /*########################### IMPORTANT ###############################*/
+        /*## Change this, according to your own OS and location of driver(s) ##*/
+        /*#####################################################################*/
         //System.setProperty("webdriver.gecko.driver", "/Users/jonassimonsen/NetBeansProjects/drivers/geckodriver");
         System.setProperty("webdriver.chrome.driver", "/Users/jonassimonsen/NetBeansProjects/drivers/chromedriver");
 
@@ -68,7 +67,6 @@ public class CarsTest1 {
     @Test
     //Verify the filter functionality 
     public void test2() throws Exception {
-//        driver.get("http://localhost:3000/reset");
         //No need to WAIT, since we are running test in a fixed order, we know the DOM is ready (because of the wait in test1)
         WebElement element = driver.findElement(By.id("filter"));
         //Complete this
@@ -87,7 +85,6 @@ public class CarsTest1 {
 
     @Test
     public void test3() throws Exception {
-//        driver.get("http://localhost:3000/reset");
         driver.manage().timeouts().implicitlyWait(WAIT_MAX, TimeUnit.SECONDS);
 
         WebElement element = driver.findElement(By.id("filter"));
@@ -127,7 +124,86 @@ public class CarsTest1 {
     
     @Test
     public void test5() throws Exception {
-        WebElement element = driver.findElement(By.tagName("tbody")).findElement(By.tagName("tr"));
+        List<WebElement> rows = driver.findElement(By.tagName("tbody")).findElements(By.tagName("tr"));
+        WebElement element = null;
+        //find element with id 938 in the tbody
+        for (int i = 0; i < rows.size(); i++) {
+            if (rows.get(i).findElements(By.tagName("td")).get(0).getText().equalsIgnoreCase("938")) {
+                element = rows.get(i);
+                break;
+            }
+        }
+
+        element = element.findElements(By.tagName("td")).get(7).findElements(By.tagName("a")).get(0);
+        //click edit button
+        element.click();
+        //clear description input field
+        driver.findElement(By.id("description")).clear();
         
+        
+        //WAIT for DOM to be executed
+        driver.manage().timeouts().implicitlyWait(WAIT_MAX, TimeUnit.SECONDS);
+        //edit description in input field
+        driver.findElement(By.id("description")).sendKeys("cool cars");
+
+        //click the save button
+        driver.findElement(By.id("save")).click();
+
+        //check that the tbody td, id 938 description is cool cars(check DOM works)
+        (new WebDriverWait(driver, WAIT_MAX)).until(new ExpectedCondition<Boolean>() {
+            public Boolean apply(WebDriver d) {
+                WebElement e = d.findElement(By.tagName("tbody"));
+                List<WebElement> rows = e.findElements(By.tagName("tr"));
+                String result = null;
+                for (int i = 0; i < rows.size(); i++) {
+                    if (rows.get(i).findElements(By.tagName("td")).get(0).getText().equalsIgnoreCase("938")) {
+                        result = rows.get(i).findElements(By.tagName("td")).get(5).getText();
+                        break;
+                    }
+                }
+                Assert.assertThat(result, is("cool cars"));
+                return true;
+            }
+        });
+    }
+    
+    @Test
+    public void test6() throws Exception {
+        driver.findElement(By.id("new")).click();
+        driver.findElement(By.id("save")).click();
+        
+        (new WebDriverWait(driver, WAIT_MAX)).until(new ExpectedCondition<Boolean>() {
+            public Boolean apply(WebDriver d) {
+                String result = d.findElement(By.id("submiterr")).getText();
+                Assert.assertThat(result, is("All fields are required"));
+                return true;
+            }
+        });
+    }
+
+    
+    @Test
+    public void test7() throws Exception {
+        driver.findElement(By.id("new")).click();
+        driver.findElement(By.id("year")).sendKeys("2008");
+        driver.findElement(By.id("registered")).sendKeys("2002-05-05");
+        driver.findElement(By.id("make")).sendKeys("Kia");
+        driver.findElement(By.id("model")).sendKeys("Rio");
+        driver.findElement(By.id("description")).sendKeys("As new");
+        driver.findElement(By.id("price")).sendKeys("31000");
+        
+        driver.findElement(By.id("save")).click();
+        
+         //WAIT for DOM to be executed
+          (new WebDriverWait(driver, WAIT_MAX)).until(new ExpectedCondition<Boolean>() {
+            public Boolean apply(WebDriver d) {
+                WebElement e = d.findElement(By.tagName("tbody"));
+                List<WebElement> rows = e.findElements(By.tagName("tr"));
+                Assert.assertThat(rows.size(), is(6)); 
+                Assert.assertThat(rows.get(5).findElements(By.tagName("td")).get(1).getText(), is("2008"));
+                Assert.assertThat(rows.get(5).findElements(By.tagName("td")).get(6).getText(), is("31.000,00 kr."));
+                return true;
+            }
+        });
     }
 }
